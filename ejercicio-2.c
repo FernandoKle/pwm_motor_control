@@ -1,4 +1,4 @@
-/*! Control de arranque de motor con PWD (por codigo)
+/*! Control de arranque de motor con PWM (por código)
   Escrito por: Fernando Kleinubing
 
 @=== Entradas ===@
@@ -9,11 +9,11 @@
 	  por el PWM
 
 * PB3 --> Pulsador, cambia entre encendido y apagado
-	  usa arranque inmeddiato, por escalon.
+	  usa arranque inmediato, por escalón.
 
 @=== Salidas ===@
 * PIN 8 --> Salida conectada al motor.
-	    un LED estara conectado al mismo PIN.
+	    un LED estará conectado al mismo PIN.
 
 * PIN 0 al 4 --> LEDs deben encenderse uno a 
 	         uno durante la etapa PWM.
