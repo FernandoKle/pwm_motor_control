@@ -1,5 +1,4 @@
 /*! Control de arranque de motor con PWM (por código)
-  Escrito por: Fernando Kleinubing
 
 @=== Entradas ===@
 * PB1 --> Pulsador, cambia entre encendido y apagado
