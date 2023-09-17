@@ -19,8 +19,8 @@
 */
 
 // @====== Librerias y defines =======@
-#define F_CPU 16000000UL // clock a 16 MHz
-#define __AVR_ATmega328P__ // Especifica que estamos usando el 328P (Arduino Uno)
+//#define F_CPU 16000000UL // clock a 16 MHz
+//#define __AVR_ATmega328P__ // Especifica que estamos usando el 328P (Arduino Uno)
 
 #include <avr/io.h>
 #include <util/delay.h> // _delay_ms(tiempo_en_ms)
@@ -41,10 +41,10 @@ volatile int time_base = T1 ;
 
 // Cantidad de ms a esperar antes del siguiente paso 
 // paso --> cambio en el nivel de tension
-#define T1_PASO (T1 / PASO)
-#define T2_PASO (T2 / PASO)
-#define T3_PASO (T3 / PASO)
-#define T4_PASO (T4 / PASO)
+#define T1_PASO (T1 / PASOS)
+#define T2_PASO (T2 / PASOS)
+#define T3_PASO (T3 / PASOS)
+#define T4_PASO (T4 / PASOS)
 
 const int * time_step_array = {T1_PASO, T2_PASO, T3_PASO, T4_PASO};
 volatile int time_step_index = 0 ;
@@ -60,11 +60,34 @@ volatile enum estado_del_motor estado_motor = apagado ;
 // @======= Definiciones de Funciones =======@
 void arranque_pwm ();
 
+// @============= Interrupciones ============@
+
+// Crea una funcion void vector_de_interrupcion(void)
+// ISR (vector_de_interrupcion){ codigo; }
+
+/* Detalles
+   El ejercicio pide manejar 2 botones con interrupciones
+   y 1 con pooling.
+   Sugiero usar el arranque por PWM con una interrupción,
+   de esa manera no va a poder ser interrumpido por otra,
+   ya que eso rompería el bucle del PWM.
+
+   Sugiero dejar el pooling para el boton de cambio de velocidad.
+*/
+
 // @================== Main =================@
 void 
 main (void)
 {
-	// CODE GOES HERE
+	// @===== Setup =====@
+
+	sei(); // activar interrupciones cli() para apagar
+
+	// @====== Loop =====@
+	while(1)
+	{
+		// Codigo
+	}
 }
 
 // @======= Funciones =======@
