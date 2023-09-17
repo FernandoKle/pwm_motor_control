@@ -20,6 +20,7 @@
 
 // @====== Librerias y defines =======@
 #define F_CPU 16000000UL // clock a 16 MHz
+#define __AVR_ATmega328P__ // Especifica que estamos usando el 328P (Arduino Uno)
 
 #include <avr/io.h>
 #include <util/delay.h> // _delay_ms(tiempo_en_ms)
