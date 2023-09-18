@@ -22,8 +22,8 @@ all: $(TARGET).elf $(TARGET).hex
 CC = avr-gcc
 CXX = avr-g++
 OBJCOPY = avr-objcopy
-#AVR_ARCH = atmega64
-#LDAVR_ARCH = avrmega64
+AVR_ARCH = atmega64
+LDAVR_ARCH = avrmega64
 
 # Clock del uC (microcontrolador)
 F_CPU = 16000000L
@@ -52,7 +52,7 @@ CFLAGS = -Os -flto
 
 # Estos flags capas que no necesitamos
 CFLAGS += -mcall-prologues -fshort-enums -fpack-struct
-#CFLAGS += -ffunction-sections -DAVR -I. -mmcu=$(AVR_ARCH)
+CFLAGS += -ffunction-sections -DAVR -I. -mmcu=$(AVR_ARCH)
 CXXFLAGS = $(CFLAGS)
 
 ####################### Fin de la configuración ####################
