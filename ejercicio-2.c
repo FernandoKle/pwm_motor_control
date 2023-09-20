@@ -25,6 +25,9 @@ Escrito por: Fernando Kleinubing
 // Especifica que estamos usando el 328P (Arduino Uno)
 //#define __AVR_ATmega328P__ 
 
+// delay.h: Permite el uso de variables para los delays
+#define __DELAY_BACKWARD_COMPATIBLE__ // los delays usan floats...
+
 #include <inttypes.h> // uint8_t int8_t entre otros tipos
 #include <avr/io.h>
 #include <util/delay.h> // _delay_ms(tiempo_en_ms)
@@ -117,6 +120,13 @@ const int16_t * un_quinto_step_array = {
 	T4_PASOS_1_QUINTO
 };
 volatile int16_t step_un_quinto = T1_PASOS_1_QUINTO ;
+
+#define T1_STEP ( PASOS / T1 )
+#define T2_STEP ( PASOS / T2 )
+#define T3_STEP ( PASOS / T3 )
+#define T4_STEP ( PASOS / T4 )
+
+const float * step_inc_array = {T1_STEP, T2_STEP, T3_STEP, T4_STEP};
 
 // Tiempo por instruccion asm
 #define T_ASM 62 // us (esto deberia depender de F_CPU)
@@ -238,7 +248,8 @@ arranque_pwm ()
 {
 	// THE BIG ONE
 	sbi(LED_PORT, LED0);
-	for ( uint16_t i = 0 ; i < time_step ; i++ )
+	
+	for ( int16_t i = 1 ; i < time_step ; i++ )
 	{
 		// LEDs
 		if ( i > step_un_quinto )
@@ -254,10 +265,21 @@ arranque_pwm ()
 			sbi(LED_PORT, LED4);
 
 		// PWM
+		// SI F = 1000 Hz --> T = 1 ms
+		// --> 1000 ejecuciones de este bucle por segundo
+		// al principio debe tener mas tiempo apagado
+		// y al terminar mas tiempo encendido
+		// Entonces, el tiempo encendido es
+		// proporcional a el PASO actual
+		// y el de apagado es lo que queda para completar el periodo.
+		// T = Ton + Toff = 1/PASOS
+
+		int16_t i_step  = i * step_inc_array[time_index] ;
+
 		MOTOR_ON ;
-		_delay_us (10) // falta definir los tiempos
+		_delay_us ( i_step ) ;
 		MOTOR_OFF ;
-		_delay_us (1)
+		_delay_us ( PASOS - i_step ) ;
 	}
 
 	return ;
