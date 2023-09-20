@@ -19,12 +19,34 @@
 */
 
 // @====== Librerias y defines =======@
+// Comentado, fue agragdo al Makefile
 //#define F_CPU 16000000UL // clock a 16 MHz
-//#define __AVR_ATmega328P__ // Especifica que estamos usando el 328P (Arduino Uno)
+// Especifica que estamos usando el 328P (Arduino Uno)
+//#define __AVR_ATmega328P__ 
 
 #include <avr/io.h>
 #include <util/delay.h> // _delay_ms(tiempo_en_ms)
 #include <avr/interrupt.h>
+
+// @=================== Macros ===================@
+// CORRE 00000001  "b" veces a la izquierda
+#define _BV(b) = (1 << b) 
+// SET (1) bit "b" de la posición "p"
+#define sbi(p,b) p |= _BV(b)
+// CLEAR (0) bit "b" de la posición "p"
+#define cbi(p,b) p &= ~(_BV(b))
+// TOGGLE (~x) bit "b" de la posición "p"
+#define tbi(p,b) p ^= _BV(b)
+
+// RECORDATORIO 0 es False y diferente de 0 es True
+
+// RETORNA 1 si bit "b" de "p" es 1
+#define is_high(p,b) (p & _BV(b)) == _BV(b)
+// RETORNA 1 si bit "b" de "p" es 1
+#define is_low(p,b) (p & _BV(b)) == 0
+// RETORNA 1+ se es uno, diferente si es cero
+// tener CUIDADO con asignar esto a un numero con signo
+#define bit_read(p,b) (p & _BV(b))
 
 // @====== Variables y constantes globales =======@
 #define T1 5000 // ms - Default
