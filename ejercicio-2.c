@@ -24,6 +24,7 @@
 // Especifica que estamos usando el 328P (Arduino Uno)
 //#define __AVR_ATmega328P__ 
 
+#include <inttypes.h> // uint8_t int8_t entre otros tipos
 #include <avr/io.h>
 #include <util/delay.h> // _delay_ms(tiempo_en_ms)
 #include <avr/interrupt.h>
@@ -54,26 +55,26 @@
 #define T3 11000 // ms
 #define T4 14000 // ms
 
-const int * time_base_array = {T1, T2, T3, T4};
-volatile int time_base_index = 0 ; // Debe estar entre 0 y 3
-volatile int time_base = T1 ;
+const int16_t * time_base_array = {T1, T2, T3, T4};
+volatile int8_t time_base_index = 0 ; // Debe estar entre 0 y 3
+volatile int16_t time_base = T1 ;
 
-// Cantidad de pasos en los cuales aumenta la tension
-#define PASOS 100 
+// Cantidad de pasos por segundo
+#define PASOS 1000
 
-// Cantidad de ms a esperar antes del siguiente paso 
-// paso --> cambio en el nivel de tension
-#define T1_PASO (T1 / PASOS)
-#define T2_PASO (T2 / PASOS)
-#define T3_PASO (T3 / PASOS)
-#define T4_PASO (T4 / PASOS)
+// Cantidad de pasos de PWM totales
+// para cada tiempo
+#define T1_PASOS (T1 / 1000 * PASOS)
+#define T2_PASOS (T2 / 1000 * PASOS)
+#define T3_PASOS (T3 / 1000 * PASOS)
+#define T4_PASOS (T4 / 1000 * PASOS)
 
-const int * time_step_array = {T1_PASO, T2_PASO, T3_PASO, T4_PASO};
-volatile int time_step_index = 0 ;
-volatile int time_step = T1_PASO ;
+const int16_t * time_step_array = {T1_PASOS, T2_PASOS, T3_PASOS, T4_PASOS};
+volatile int8_t time_step_index = 0 ;
+volatile int16_t time_step = T1_PASOS ;
 
 // Tiempo por instruccion asm
-#define T_ASM 62 // us
+#define T_ASM 62 // us (esto deberia depender de F_CPU)
 
 // Estado del motor
 enum estado_del_motor {apagado, encendido, en_pwm};
@@ -81,6 +82,8 @@ volatile enum estado_del_motor estado_motor = apagado ;
 
 // @======= Definiciones de Funciones =======@
 void arranque_pwm ();
+void arranque_escalon ();
+void alterar_tiempo ();
 
 // @============= Interrupciones ============@
 
@@ -115,6 +118,18 @@ main (void)
 // @======= Funciones =======@
 void 
 arranque_pwm ()
+{
+	// WRITE ME
+}
+
+void 
+arranque_escalon ()
+{
+	// WRITE ME
+}
+
+void 
+alterar_tiempo ()
 {
 	// WRITE ME
 }
