@@ -88,7 +88,7 @@ Escrito por: Fernando Kleinubing
 #define T4 14000 // ms
 
 const int16_t * time_base_array = {T1, T2, T3, T4};
-volatile int8_t time_base_index = 0 ; // Debe estar entre 0 y 3
+volatile int8_t time_index = 0 ; // Debe estar entre 0 y 3
 volatile int16_t time_base = T1 ;
 
 // Cantidad de pasos por segundo
@@ -102,8 +102,21 @@ volatile int16_t time_base = T1 ;
 #define T4_PASOS (T4 / 1000 * PASOS)
 
 const int16_t * time_step_array = {T1_PASOS, T2_PASOS, T3_PASOS, T4_PASOS};
-volatile int8_t time_step_index = 0 ;
 volatile int16_t time_step = T1_PASOS ;
+
+// 1/5 parte de los pasos
+#define T1_PASOS_1_QUINTO ( T1_PASOS / 5 )
+#define T2_PASOS_1_QUINTO ( T2_PASOS / 5 )
+#define T3_PASOS_1_QUINTO ( T3_PASOS / 5 )
+#define T4_PASOS_1_QUINTO ( T4_PASOS / 5 )
+
+const int16_t * un_quinto_step_array = {
+	T1_PASOS_1_QUINTO, 
+	T2_PASOS_1_QUINTO, 
+	T3_PASOS_1_QUINTO, 
+	T4_PASOS_1_QUINTO
+};
+volatile int16_t step_un_quinto = T1_PASOS_1_QUINTO ;
 
 // Tiempo por instruccion asm
 #define T_ASM 62 // us (esto deberia depender de F_CPU)
@@ -115,6 +128,8 @@ volatile enum estado_del_motor estado_motor = apagado ;
 // @======= Definiciones de Funciones =======@
 void arranque_pwm ();
 void alterar_tiempo ();
+void apagar_leds ();
+void encender_leds ();
 
 // @============= Interrupciones ============@
 
@@ -143,6 +158,7 @@ ISR (INT0_vect) // Boton de arranque por PWM
 	{
 		MOTOR_OFF ;
 		estado_motor = encendido ;
+		apagar_leds();
 	}
 
 	return;
@@ -152,6 +168,7 @@ ISR (INT1_vect) // Boton de arranque por Escalon
 {
 	if (estado_motor == apagado)
 	{
+		encender_leds ();
 		MOTOR_ON ;
 		estado_motor = encendido ;
 	}
@@ -159,6 +176,7 @@ ISR (INT1_vect) // Boton de arranque por Escalon
 	{
 		MOTOR_OFF ;
 		estado_motor = encendido ;
+		apagar_leds();
 	}
 
 	return;
@@ -218,26 +236,64 @@ main (void)
 void 
 arranque_pwm ()
 {
-	// WRITE ME
+	// THE BIG ONE
+	sbi(LED_PORT, LED0);
+	for ( uint16_t i = 0 ; i < time_step ; i++ )
+	{
+		// LEDs
+		if ( i > step_un_quinto )
+			sbi(LED_PORT, LED1);
+
+		if ( i > step_un_quinto * 2 )
+			sbi(LED_PORT, LED2);
+
+		if ( i > step_un_quinto * 3 )
+			sbi(LED_PORT, LED3);
+
+		if ( i > step_un_quinto * 4 )
+			sbi(LED_PORT, LED4);
+
+		// PWM
+		MOTOR_ON ;
+		_delay_us (10) // falta definir los tiempos
+		MOTOR_OFF ;
+		_delay_us (1)
+	}
+
+	return ;
+}
+
+void 
+apagar_leds ()
+{
+	cbi(LED_PORT, LED0);
+	cbi(LED_PORT, LED1);
+	cbi(LED_PORT, LED2);
+	cbi(LED_PORT, LED3);
+	cbi(LED_PORT, LED4);
+}
+
+void 
+encender_leds ()
+{
+	sbi(LED_PORT, LED0);
+	sbi(LED_PORT, LED1);
+	sbi(LED_PORT, LED2);
+	sbi(LED_PORT, LED3);
+	sbi(LED_PORT, LED4);
 }
 
 void 
 alterar_tiempo ()
 {
-	// Time base
-	time_base_index ++ ;
+	time_index ++ ;
 
-	if (time_base_index > 3)
-		time_base_index = 0 ;
+	if (time_index > 3)
+		time_index = 0 ;
 
-	time_base = time_base_array [time_base_index] ;
+	time_base = time_base_array [time_index] ;
+	time_step = time_step_array [time_index] ;
+	step_un_quinto = un_quinto_step_array [time_index] ;
 
-	// Time step
-	time_step_index ++ ;
-
-	if (time_step_index > 3)
-		time_step_index = 0 ;
-
-	time_step = time_step_array [time_step_index] ;
 	return ;
 }
