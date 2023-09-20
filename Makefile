@@ -48,7 +48,7 @@ CFLAGS = -DF_CPU=$(F_CPU) -D$(AVR_IO_H) -Wall
 # Flags de optimización 
 # para debugging cambiar -Os (small binary) por -Og (debug mode)
 # si hay problemas, quitar lto (link time optimization)
-CFLAGS = -Os -flto
+CFLAGS += -Os -flto
 
 # Estos flags capas que no necesitamos
 CFLAGS += -mcall-prologues -fshort-enums -fpack-struct
