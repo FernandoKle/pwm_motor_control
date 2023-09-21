@@ -26,7 +26,7 @@ AVR_ARCH = atmega64
 LDAVR_ARCH = avrmega64
 
 # Clock del uC (microcontrolador)
-F_CPU = 16000000L
+F_CPU = 16000000UL
 
 # Especifica la placa en uso a la librería de IO
 AVR_IO_H = __AVR_ATmega328P__  # Arduino Uno
@@ -36,7 +36,7 @@ AVR_IO_H = __AVR_ATmega328P__  # Arduino Uno
 FLASH_PROTOCOL = arduino  # Arduino Uno
 #FLASH_PROTOCOL = wiring  # Mega (creo)
 
-PORT = /dev/arduino # COMx si Windows
+PORT = /dev/ttyACM0 # COMx si Windows
 
 AVRDUDE_PART = atmega328p  # Arduino Uno
 #AVRDUDE_PART = atmega2560 # Mega (creo)
@@ -45,14 +45,19 @@ AVRDUDE_PART = atmega328p  # Arduino Uno
 
 CFLAGS = -DF_CPU=$(F_CPU) -D$(AVR_IO_H) -Wall 
 
-# Flags de optimización 
+### Flags de optimización 
 # para debugging cambiar -Os (small binary) por -Og (debug mode)
 # si hay problemas, quitar lto (link time optimization)
-CFLAGS += -Os -flto
+#CFLAGS += -Os -flto
 
-# Estos flags capas que no necesitamos
-CFLAGS += -mcall-prologues -fshort-enums -fpack-struct
-CFLAGS += -ffunction-sections -DAVR -I. -mmcu=$(AVR_ARCH)
+### Para Debug
+CFLAGS += -Og
+
+### Estos flags capas que no necesitamos
+#CFLAGS += -mcall-prologues -fshort-enums
+#CFLAGS += -ffunction-sections -fpack-struct
+CFLAGS += -DAVR -I. -mmcu=$(AVR_ARCH)
+
 CXXFLAGS = $(CFLAGS)
 
 ####################### Fin de la configuración ####################

@@ -38,7 +38,7 @@ Escrito por: Fernando Kleinubing
 // b --> bit
 
 // CORRE 00000001  "b" veces a la izquierda
-#define _BV(b) ( (1 << b) ) 
+//#define _BV(b) ( (1 << b) )  // Incluido en las librerias
 // SET (1) bit "b" de la posición "p"
 #define sbi(p,b) ( p |= _BV(b) )
 // CLEAR (0) bit "b" de la posición "p"
@@ -225,6 +225,10 @@ main (void)
 	// @====== Loop =====@
 	while(1)
 	{
+		// Debugging, QUITAR ESTO
+		//tbi(LED_PORT, LED4);
+		//_delay_ms(300);
+
 		// Hacer pooling del TIME_BUTTON
 		if ( is_high(BUTTON_PIN, TIME_BUTTON) && (time_button_counter > 5) )
 		{
