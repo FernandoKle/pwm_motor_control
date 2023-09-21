@@ -140,6 +140,7 @@ void arranque_pwm ();
 void alterar_tiempo ();
 void apagar_leds ();
 void encender_leds ();
+void alt_delay_ms(int);
 
 // @============= Interrupciones ============@
 
@@ -243,6 +244,18 @@ main (void)
 	/*      *                        *     */
 
 /* @======= Funciones =======@ */
+
+// _delay_ms(constante de compilacion)
+void 
+alt_delay_ms(int ms)
+{
+  while (0 < ms)
+  {  
+    _delay_ms(1);
+    --ms;
+  }
+}
+
 void 
 arranque_pwm ()
 {
