@@ -22,8 +22,8 @@ all: $(TARGET).elf $(TARGET).hex
 CC = avr-gcc
 CXX = avr-g++
 OBJCOPY = avr-objcopy
-AVR_ARCH = atmega64
-LDAVR_ARCH = avrmega64
+AVR_ARCH = atmega328p #atmega64
+LDAVR_ARCH = atmega328p #avrmega64
 
 # Clock del uC (microcontrolador)
 F_CPU = 16000000UL
@@ -48,15 +48,20 @@ CFLAGS = -DF_CPU=$(F_CPU) -D$(AVR_IO_H) -Wall
 ### Flags de optimización 
 # para debugging cambiar -Os (small binary) por -Og (debug mode)
 # si hay problemas, quitar lto (link time optimization)
-#CFLAGS += -Os -flto
+CFLAGS += -Os
+#CFLAGS += -flto
 
 ### Para Debug
-CFLAGS += -Og
+#CFLAGS += -Og
 
 ### Estos flags capas que no necesitamos
-#CFLAGS += -mcall-prologues -fshort-enums
-#CFLAGS += -ffunction-sections -fpack-struct
-CFLAGS += -DAVR -I. -mmcu=$(AVR_ARCH)
+CFLAGS += -mcall-prologues -fshort-enums
+CFLAGS += -ffunction-sections -fpack-struct 
+CFLAGS += -funsigned-char -funsigned-bitfields -fdata-sections
+CFLAGS += -DAVR -I. -mmcu=$(AVR_ARCH) -std=gnu99
+
+# Generar .map al compilar
+CFLAGS += -Wl,-Map,$(TARGET).map  -Wl,--gc-sections
 
 CXXFLAGS = $(CFLAGS)
 
@@ -75,4 +80,4 @@ $(TARGET).hex: $(TARGET).elf
 # carga el binario en la placa
 load: $(TARGET).hex
 	echo "Cargando .hex a la placa"
-	avrdude -c $(FLASH_PROTOCOL) -P $(PORT) -b 115200 -p $(AVRDUDE_PART) -D -U flash:w:"$@":i
+	avrdude -c $(FLASH_PROTOCOL) -P $(PORT) -b 115200 -p $(AVRDUDE_PART) -D -U flash:w:"$<":i
