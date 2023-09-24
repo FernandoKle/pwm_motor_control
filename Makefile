@@ -46,13 +46,14 @@ AVRDUDE_PART = atmega328p  # Arduino Uno
 CFLAGS = -DF_CPU=$(F_CPU) -D$(AVR_IO_H) -Wall 
 
 ### Flags de optimización 
-# para debugging cambiar -Os (small binary) por -Og (debug mode)
+#CFLAGS += -Os
+
 # si hay problemas, quitar lto (link time optimization)
-CFLAGS += -Os
 #CFLAGS += -flto
 
 ### Para Debug
-#CFLAGS += -Og
+# cambiar -Os (small binary) por -Og (debug mode)
+CFLAGS += -Og
 
 ### Estos flags capas que no necesitamos
 CFLAGS += -mcall-prologues -fshort-enums

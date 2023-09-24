@@ -160,15 +160,19 @@ void alt_delay_ms(int);
 // @==== Definiciones de Interrupciones =====@
 ISR (INT0_vect) // Boton de arranque por PWM
 {
+	// Para Debugging
+	//arranque_pwm();
+
 	if (estado_motor == apagado)
 	{
 		estado_motor = en_pwm ;
 		arranque_pwm();
+		estado_motor = encendido ;
 	}
 	else
 	{
 		MOTOR_OFF ;
-		estado_motor = encendido ;
+		estado_motor = apagado ;
 		apagar_leds();
 	}
 
@@ -188,7 +192,7 @@ ISR (INT1_vect) // Boton de arranque por Escalon
 	else
 	{
 		MOTOR_OFF ;
-		estado_motor = encendido ;
+		estado_motor = apagado ;
 		apagar_leds();
 	}
 
@@ -202,7 +206,7 @@ ISR (INT1_vect) // Boton de arranque por Escalon
 	/*  /---\ @=== Main ===@ /---\  */
 	/* /-----\              /-----\ */
 
-void 
+int 
 main (void)
 {
 	// @===== Setup =====@
@@ -210,6 +214,11 @@ main (void)
 	// Puertos y Pines
 	// Deberian estar todos en Entrada por defecto
 	// Asi que solo activo los que quiero como salida
+
+	// Primero, todos los puertos a 0
+	PORTD = 0x00 ;
+	PORTB = 0x00 ;
+	PORTC = 0x00 ;
 
 	// Motor
 	sbi(MOTOR_DDR, MOTOR); // Habilita la salida
@@ -237,7 +246,7 @@ main (void)
 	// @====== Loop =====@
 	while(1)
 	{
-		// Debugging, QUITAR ESTO
+		// Debugging
 		//tbi(LED_PORT, LED4);
 		//_delay_ms(300);
 
@@ -246,10 +255,16 @@ main (void)
 		{
 			alterar_tiempo();
 			time_button_counter = 0 ;
+
+			// Debugging
+			tbi(LED_PORT, LED4);
+			_delay_ms(300);
+			tbi(LED_PORT, LED4);
+			_delay_ms(300);
 		}
 		else
 		{
-			_delay_ms(1); // espera 1 ms
+			_delay_ms(2); // espera 1 ms
 			time_button_counter ++ ;
 		}
 	}
@@ -310,6 +325,9 @@ arranque_pwm ()
 		MOTOR_OFF ;
 		_delay_us ( PASOS - i_step ) ;
 	}
+	
+	// Dejar encendido al final de la secuencia
+	MOTOR_ON ;
 
 	return ;
 }
