@@ -172,6 +172,8 @@ ISR (INT0_vect) // Boton de arranque por PWM
 		apagar_leds();
 	}
 
+	EIFR = 0x00 ; // Apaga los flags, por si acaso
+
 	return;
 }
 
@@ -189,6 +191,8 @@ ISR (INT1_vect) // Boton de arranque por Escalon
 		estado_motor = encendido ;
 		apagar_leds();
 	}
+
+	EIFR = 0x00 ; // Apaga los flags, por si acaso
 
 	return;
 }
@@ -217,10 +221,18 @@ main (void)
 	sbi(LED_DDR, LED3);
 	sbi(LED_DDR, LED4);
 
-	// Activar interrupciones, cli() para apagar
+	// Habilita interrupcion INT0 e INT1
+	EICRA = 0b00001111 ; // Flanco asendente para ambos
+	EIMSK = 0b00000011 ; // Habilita ambas interrupciones
+	EIFR = 0x00 ; // Apaga los flags, por si acaso
+
+	// Activar bit de interrupciones global, cli() para apagar
 	sei(); 
 
 	uint8_t time_button_counter = 0 ;
+
+	// Debuging
+	//arranque_pwm();
 
 	// @====== Loop =====@
 	while(1)
