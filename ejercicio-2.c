@@ -8,7 +8,7 @@ Escrito por: Fernando Kleinubing
 * PB2 --> Pooling, Pulsador, cambia la constante de tiempo usada
 	  por el PWM
 
-* PB3 --> PIN3, INT1, Pulsador, cambia entre encendido y apagado
+* PB3 --> Pooling, Pulsador, cambia entre encendido y apagado
 	  usa arranque inmediato, por escalón.
 
 @=== Salidas ===@
@@ -96,7 +96,6 @@ volatile int16_t time_base = T1 ;
 
 // Cantidad de pasos por segundo
 #define PASOS 50
-#define ESCALA 1 // Por ahora no se usa
 #define PERIODO 20 // ms
 
 // Cantidad de pasos de PWM totales
@@ -123,14 +122,13 @@ const int16_t un_quinto_step_array[] = {
 };
 volatile int16_t step_un_quinto = T1_PASOS_1_QUINTO ;
 
-// Calculo de pendiente
+// Calculo de pendientes
 // 1/50 = 20 ms = T (periodo)
 // Ton + Toff = T
 // 20 [ms] / (cantidad de pasos)
-//#define T1_STEP (PASOS / T1_PASOS)
-//#define T2_STEP (PASOS / T2_PASOS)
-//#define T3_STEP (PASOS / T3_PASOS)
-//#define T4_STEP (PASOS / T4_PASOS)
+
+// Comentado y calculado a mano ya que el
+// compilador los resolvia como 0
 //#define T1_STEP (PERIODO / T1_PASOS)
 //#define T2_STEP (PERIODO / T2_PASOS)
 //#define T3_STEP (PERIODO / T3_PASOS)
@@ -144,9 +142,6 @@ const float step_inc_array[] = {
 	0.028  // T4_STEP
 };
 
-// Tiempo por instruccion asm
-#define T_ASM 62 // us (esto deberia depender de F_CPU)
-
 // Estado del motor
 enum estado_del_motor {apagado, encendido, en_pwm};
 volatile enum estado_del_motor estado_motor = apagado ;
@@ -157,6 +152,7 @@ void alterar_tiempo ();
 void apagar_leds ();
 void encender_leds ();
 void alt_delay_ms(uint16_t);
+void alt_delay_100_u(uint16_t);
 
 // @============= Interrupciones ============@
 
@@ -172,6 +168,7 @@ void alt_delay_ms(uint16_t);
 */
 
 // @==== Definiciones de Interrupciones =====@
+
 ISR (INT0_vect) // Boton de arranque por PWM
 {
 	if (estado_motor == apagado)
@@ -183,6 +180,7 @@ ISR (INT0_vect) // Boton de arranque por PWM
 	{
 		// si no se presiona rapido el boton 
 		// esto se ejecuta al final de la secuencia...
+		// las interrupciones tienden a ejecutarse 2 veces.
 		// esto no se ve en el simulador
 		// con este tercer estado intento evitar ese problema.
 		if (estado_motor == en_pwm)
@@ -197,8 +195,8 @@ ISR (INT0_vect) // Boton de arranque por PWM
 		}
 	}
 
-	// no parece tener efecto
 	//EIFR = 0x00 ; // Apaga los flags, por si acaso
+	// no parece tener efecto...
 
 	return;
 }
@@ -236,8 +234,6 @@ main (void)
 	// @===== Setup =====@
 
 	// Puertos y Pines
-	// Deberian estar todos en Entrada por defecto
-	// Asi que solo activo los que quiero como salida
 
 	// Primero, todos los puertos a 0
 	PORTD = 0x00 ;
@@ -254,10 +250,6 @@ main (void)
 	sbi(LED_DDR, LED3);
 	sbi(LED_DDR, LED4);
 
-	// Habilita interrupcion INT0 e INT1
-	//EICRA = 0b00001111 ; // Flanco asendente para ambos
-	//EIMSK = 0b00000011 ; // Habilita ambas interrupciones
-
 	// Habilita interrupcion INT0
 	EICRA = 0b00000010 ; // Flanco desendente
 	EIMSK = 0b00000001 ; // Habilita interrupciones
@@ -266,18 +258,9 @@ main (void)
 	// Activar bit de interrupciones global, cli() para apagar
 	sei(); 
 
-	//uint8_t time_button_counter = 0 ;
-
-	// Debuging
-	//arranque_pwm();
-
 	// @====== Loop =====@
 	while(1)
 	{
-		// Debugging
-		//tbi(LED_PORT, LED4);
-		//_delay_ms(300);
-
 		// Hacer pooling del TIME_BUTTON
 		if ( is_low(BUTTON_PIN, TIME_BUTTON))
 		{
@@ -365,17 +348,12 @@ arranque_pwm ()
 		MOTOR_ON ;
 
 		uint16_t i_step = i * pendiente + 1 ;
-		//uint16_t i_step = (i * pendiente + 1)*10 ;
 
-		//alt_delay_ms ( i );
 		alt_delay_ms ( i_step ) ;
-		//alt_delay_100_u ( i_step ) ;
 
 		MOTOR_OFF ;
 
-		//alt_delay_ms ( PERIODO - i );
 		alt_delay_ms ( PERIODO - i_step ) ;
-		//alt_delay_100_u ( PERIODO*10 - i_step ) ;
 	}
 	
 	// Dejar encendido al final de la secuencia
