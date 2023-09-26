@@ -53,7 +53,8 @@ CFLAGS = -DF_CPU=$(F_CPU) -D$(AVR_IO_H) -Wall
 
 ### Para Debug
 # cambiar -Os (small binary) por -Og (debug mode)
-CFLAGS += -Og
+# -O2 para mas velocidad
+CFLAGS += -O2
 
 ### Estos flags capas que no necesitamos
 CFLAGS += -mcall-prologues -fshort-enums

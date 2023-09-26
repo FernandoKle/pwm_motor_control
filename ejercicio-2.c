@@ -26,7 +26,7 @@ Escrito por: Fernando Kleinubing
 //#define __AVR_ATmega328P__ 
 
 // delay.h: Permite el uso de variables para los delays
-#define __DELAY_BACKWARD_COMPATIBLE__ // los delays usan floats...
+//#define __DELAY_BACKWARD_COMPATIBLE__ // los delays usan floats...
 
 #include <inttypes.h> // uint8_t int8_t entre otros tipos
 #include <avr/io.h>
@@ -95,10 +95,12 @@ volatile int8_t time_index = 0 ; // Debe estar entre 0 y 3
 volatile int16_t time_base = T1 ;
 
 // Cantidad de pasos por segundo
-#define PASOS 1000
+#define PASOS 50
+#define ESCALA 1 // Por ahora no se usa
+#define PERIODO 20 // ms
 
 // Cantidad de pasos de PWM totales
-// para cada tiempo
+// para cada segundo
 #define T1_PASOS (T1 / 1000 * PASOS)
 #define T2_PASOS (T2 / 1000 * PASOS)
 #define T3_PASOS (T3 / 1000 * PASOS)
@@ -121,12 +123,26 @@ const int16_t un_quinto_step_array[] = {
 };
 volatile int16_t step_un_quinto = T1_PASOS_1_QUINTO ;
 
-#define T1_STEP (PASOS / T1)
-#define T2_STEP (PASOS / T2)
-#define T3_STEP (PASOS / T3)
-#define T4_STEP (PASOS / T4)
+// Calculo de pendiente
+// 1/50 = 20 ms = T (periodo)
+// Ton + Toff = T
+// 20 [ms] / (cantidad de pasos)
+//#define T1_STEP (PASOS / T1_PASOS)
+//#define T2_STEP (PASOS / T2_PASOS)
+//#define T3_STEP (PASOS / T3_PASOS)
+//#define T4_STEP (PASOS / T4_PASOS)
+//#define T1_STEP (PERIODO / T1_PASOS)
+//#define T2_STEP (PERIODO / T2_PASOS)
+//#define T3_STEP (PERIODO / T3_PASOS)
+//#define T4_STEP (PERIODO / T4_PASOS)
 
-const float step_inc_array[] = {T1_STEP, T2_STEP, T3_STEP, T4_STEP};
+//const float step_inc_array[] = {T1_STEP, T2_STEP, T3_STEP, T4_STEP};
+const float step_inc_array[] = {
+	0.08,  // T1_STEP 
+	0.05,  // T2_STEP 
+	0.036, // T3_STEP 
+	0.028  // T4_STEP
+};
 
 // Tiempo por instruccion asm
 #define T_ASM 62 // us (esto deberia depender de F_CPU)
@@ -140,7 +156,7 @@ void arranque_pwm ();
 void alterar_tiempo ();
 void apagar_leds ();
 void encender_leds ();
-void alt_delay_ms(int);
+void alt_delay_ms(uint16_t);
 
 // @============= Interrupciones ============@
 
@@ -158,22 +174,30 @@ void alt_delay_ms(int);
 // @==== Definiciones de Interrupciones =====@
 ISR (INT0_vect) // Boton de arranque por PWM
 {
-	// Para Debugging
-	//arranque_pwm();
-
 	if (estado_motor == apagado)
 	{
 		estado_motor = en_pwm ;
 		arranque_pwm();
-		estado_motor = encendido ;
 	}
-	else
+	else 
 	{
-		MOTOR_OFF ;
-		estado_motor = apagado ;
-		apagar_leds();
+		// si no se presiona rapido el boton 
+		// esto se ejecuta al final de la secuencia...
+		// esto no se ve en el simulador
+		// con este tercer estado intento evitar ese problema.
+		if (estado_motor == en_pwm)
+		{
+			estado_motor = encendido ;
+		}
+		else
+		{
+			MOTOR_OFF ;
+			estado_motor = apagado ;
+			apagar_leds();
+		}
 	}
 
+	// no parece tener efecto
 	//EIFR = 0x00 ; // Apaga los flags, por si acaso
 
 	return;
@@ -257,7 +281,7 @@ main (void)
 		// Hacer pooling del TIME_BUTTON
 		if ( is_low(BUTTON_PIN, TIME_BUTTON))
 		{
-			_delay_ms(10); // Espera
+			_delay_ms(5); // Espera
 			if ( is_low(BUTTON_PIN, TIME_BUTTON)) // vuelve a medir
 			{
 				alterar_tiempo();
@@ -267,7 +291,7 @@ main (void)
 		// Hacer pooling del STEP_BUTTON
 		if ( is_low(BUTTON_PIN, STEP_BUTTON))
 		{
-			_delay_ms(10); // Espera
+			_delay_ms(5); // Espera
 			if ( is_low(BUTTON_PIN, STEP_BUTTON)) // vuelve a medir
 			{
 				arranque_escalon();
@@ -284,13 +308,25 @@ main (void)
 
 // _delay_ms(constante de compilacion)
 void 
-alt_delay_ms(int ms)
+alt_delay_ms (uint16_t ms)
 {
   while (0 < ms)
   {  
     _delay_ms(1);
     --ms;
   }
+  return;
+}
+
+void 
+alt_delay_100_u (uint16_t ms)
+{
+  while (0 < ms)
+  {  
+    _delay_ms(0.1);
+    --ms;
+  }
+  return;
 }
 
 void 
@@ -298,6 +334,8 @@ arranque_pwm ()
 {
 	// THE BIG ONE
 	sbi(LED_PORT, LED0);
+
+	float pendiente = step_inc_array[time_index];
 	
 	for ( int16_t i = 1 ; i < time_step ; i++ )
 	{
@@ -324,12 +362,20 @@ arranque_pwm ()
 		// y el de apagado es lo que queda para completar el periodo.
 		// T = Ton + Toff = 1/PASOS
 
-		int16_t i_step  = i * step_inc_array[time_index] ;
-
 		MOTOR_ON ;
-		_delay_us ( i_step ) ;
+
+		uint16_t i_step = i * pendiente + 1 ;
+		//uint16_t i_step = (i * pendiente + 1)*10 ;
+
+		//alt_delay_ms ( i );
+		alt_delay_ms ( i_step ) ;
+		//alt_delay_100_u ( i_step ) ;
+
 		MOTOR_OFF ;
-		_delay_us ( PASOS - i_step ) ;
+
+		//alt_delay_ms ( PERIODO - i );
+		alt_delay_ms ( PERIODO - i_step ) ;
+		//alt_delay_100_u ( PERIODO*10 - i_step ) ;
 	}
 	
 	// Dejar encendido al final de la secuencia
