@@ -75,14 +75,14 @@ Escrito por: Fernando Kleinubing
 #define LED1 PORTD5
 #define LED2 PORTD6
 #define LED3 PORTD7
-#define LED4 PORTD0
+#define LED4 PORTD3
 
-#define BUTTON_PORT PIND
-#define BUTTON_PIN BUTTON_PORT // para evitar errores
+#define BUTTON_PORT PINB // para evitar errores
+#define BUTTON_PIN 	PINB // deben ser iguales
 
-#define TIME_BUTTON PIND1 // Pooling
+#define TIME_BUTTON PINB3 // Pooling
 #define PWM_BUTTON  PIND2 // ISR (INT0_vect)
-#define STEP_BUTTON PIND3 // ISR (INT1_vect)
+#define STEP_BUTTON PINB2 // ISR (INT1_vect) (PIND3) (ya no)
 
 // @====== Variables y constantes globales =======@
 #define T1 5000 // ms - Default
@@ -148,13 +148,11 @@ void alt_delay_ms(int);
 // ISR (vector_de_interrupcion){ codigo; }
 
 /* Detalles
-   El ejercicio pide manejar 2 botones con interrupciones
-   y 1 con pooling.
+   El ejercicio pide manejar 1 botones con interrupciones
+   y 2 con pooling.
    Sugiero usar el arranque por PWM con una interrupción,
    de esa manera no va a poder ser interrumpido por otra,
    ya que eso rompería el bucle del PWM.
-
-   Sugiero dejar el pooling para el boton de cambio de velocidad.
 */
 
 // @==== Definiciones de Interrupciones =====@
@@ -176,12 +174,14 @@ ISR (INT0_vect) // Boton de arranque por PWM
 		apagar_leds();
 	}
 
-	EIFR = 0x00 ; // Apaga los flags, por si acaso
+	//EIFR = 0x00 ; // Apaga los flags, por si acaso
 
 	return;
 }
 
-ISR (INT1_vect) // Boton de arranque por Escalon
+//ISR (INT1_vect) // Boton de arranque por Escalon
+void
+arranque_escalon()
 {
 	if (estado_motor == apagado)
 	{
@@ -196,7 +196,7 @@ ISR (INT1_vect) // Boton de arranque por Escalon
 		apagar_leds();
 	}
 
-	EIFR = 0x00 ; // Apaga los flags, por si acaso
+	//EIFR = 0x00 ; // Apaga los flags, por si acaso
 
 	return;
 }
@@ -231,14 +231,18 @@ main (void)
 	sbi(LED_DDR, LED4);
 
 	// Habilita interrupcion INT0 e INT1
-	EICRA = 0b00001111 ; // Flanco asendente para ambos
-	EIMSK = 0b00000011 ; // Habilita ambas interrupciones
+	//EICRA = 0b00001111 ; // Flanco asendente para ambos
+	//EIMSK = 0b00000011 ; // Habilita ambas interrupciones
+
+	// Habilita interrupcion INT0
+	EICRA = 0b00000010 ; // Flanco desendente
+	EIMSK = 0b00000001 ; // Habilita interrupciones
 	EIFR = 0x00 ; // Apaga los flags, por si acaso
 
 	// Activar bit de interrupciones global, cli() para apagar
 	sei(); 
 
-	uint8_t time_button_counter = 0 ;
+	//uint8_t time_button_counter = 0 ;
 
 	// Debuging
 	//arranque_pwm();
@@ -251,21 +255,23 @@ main (void)
 		//_delay_ms(300);
 
 		// Hacer pooling del TIME_BUTTON
-		if ( is_high(BUTTON_PIN, TIME_BUTTON) && (time_button_counter > 5) )
+		if ( is_low(BUTTON_PIN, TIME_BUTTON))
 		{
-			alterar_tiempo();
-			time_button_counter = 0 ;
-
-			// Debugging
-			tbi(LED_PORT, LED4);
-			_delay_ms(300);
-			tbi(LED_PORT, LED4);
-			_delay_ms(300);
+			_delay_ms(10); // Espera
+			if ( is_low(BUTTON_PIN, TIME_BUTTON)) // vuelve a medir
+			{
+				alterar_tiempo();
+			}
 		}
-		else
+
+		// Hacer pooling del STEP_BUTTON
+		if ( is_low(BUTTON_PIN, STEP_BUTTON))
 		{
-			_delay_ms(2); // espera 1 ms
-			time_button_counter ++ ;
+			_delay_ms(10); // Espera
+			if ( is_low(BUTTON_PIN, STEP_BUTTON)) // vuelve a medir
+			{
+				arranque_escalon();
+			}
 		}
 	}
 }
