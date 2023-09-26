@@ -70,15 +70,15 @@ CXXFLAGS = $(CFLAGS)
 
 # Compila el binario
 $(TARGET).elf: $(TARGET).c
-	echo "Compilando"
+	@echo "Compilando"
 	$(CC) $(CFLAGS) $< -o $@
 
 # Pasa el binario a .hex
 $(TARGET).hex: $(TARGET).elf
-	echo "Generando .hex"
+	@echo "Generando .hex"
 	$(OBJCOPY) -j .text -j .data -O ihex $< $@
 
 # carga el binario en la placa
 load: $(TARGET).hex
-	echo "Cargando .hex a la placa"
+	@echo "Cargando .hex a la placa"
 	avrdude -c $(FLASH_PROTOCOL) -P $(PORT) -b 115200 -p $(AVRDUDE_PART) -D -U flash:w:"$<":i

@@ -50,7 +50,7 @@ Escrito por: Fernando Kleinubing
 
 // RETORNA 1 si bit "b" de "p" es 1
 #define is_high(p,b) ( (p & _BV(b)) == _BV(b) )
-// RETORNA 1 si bit "b" de "p" es 1
+// RETORNA 1 si bit "b" de "p" es 0
 #define is_low(p,b) ( (p & _BV(b)) == 0 )
 // RETORNA 1+ se es uno, diferente si es cero
 // tener CUIDADO con asignar esto a un numero con signo
@@ -90,7 +90,7 @@ Escrito por: Fernando Kleinubing
 #define T3 11000 // ms
 #define T4 14000 // ms
 
-const int16_t * time_base_array = {T1, T2, T3, T4};
+const int16_t time_base_array[] = {T1, T2, T3, T4};
 volatile int8_t time_index = 0 ; // Debe estar entre 0 y 3
 volatile int16_t time_base = T1 ;
 
@@ -104,7 +104,7 @@ volatile int16_t time_base = T1 ;
 #define T3_PASOS (T3 / 1000 * PASOS)
 #define T4_PASOS (T4 / 1000 * PASOS)
 
-const int16_t * time_step_array = {T1_PASOS, T2_PASOS, T3_PASOS, T4_PASOS};
+const int16_t time_step_array[] = {T1_PASOS, T2_PASOS, T3_PASOS, T4_PASOS};
 volatile int16_t time_step = T1_PASOS ;
 
 // 1/5 parte de los pasos
@@ -113,7 +113,7 @@ volatile int16_t time_step = T1_PASOS ;
 #define T3_PASOS_1_QUINTO ( T3_PASOS / 5 )
 #define T4_PASOS_1_QUINTO ( T4_PASOS / 5 )
 
-const int16_t * un_quinto_step_array = {
+const int16_t un_quinto_step_array[] = {
 	T1_PASOS_1_QUINTO, 
 	T2_PASOS_1_QUINTO, 
 	T3_PASOS_1_QUINTO, 
@@ -121,12 +121,12 @@ const int16_t * un_quinto_step_array = {
 };
 volatile int16_t step_un_quinto = T1_PASOS_1_QUINTO ;
 
-#define T1_STEP ( PASOS / T1 )
-#define T2_STEP ( PASOS / T2 )
-#define T3_STEP ( PASOS / T3 )
-#define T4_STEP ( PASOS / T4 )
+#define T1_STEP (PASOS / T1)
+#define T2_STEP (PASOS / T2)
+#define T3_STEP (PASOS / T3)
+#define T4_STEP (PASOS / T4)
 
-const float * step_inc_array = {T1_STEP, T2_STEP, T3_STEP, T4_STEP};
+const float step_inc_array[] = {T1_STEP, T2_STEP, T3_STEP, T4_STEP};
 
 // Tiempo por instruccion asm
 #define T_ASM 62 // us (esto deberia depender de F_CPU)
