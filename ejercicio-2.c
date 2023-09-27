@@ -143,8 +143,13 @@ const float step_inc_array[] = {
 };
 
 // Estado del motor
-enum estado_del_motor {apagado, encendido, en_pwm};
+enum estado_del_motor {apagado, encendido, en_pwm, casi_apagado};
 volatile enum estado_del_motor estado_motor = apagado ;
+
+// Flag pulsadores
+enum estado_pulsador {bajo, alto};
+volatile enum estado_pulsador pul_step = alto ;
+volatile enum estado_pulsador pul_time = alto ;
 
 // @======= Definiciones de Funciones =======@
 void arranque_pwm ();
@@ -187,11 +192,17 @@ ISR (INT0_vect) // Boton de arranque por PWM
 		{
 			estado_motor = encendido ;
 		}
+		else if ( estado_motor == encendido )
+		{
+			estado_motor = casi_apagado ;
+		}
 		else
 		{
 			MOTOR_OFF ;
 			estado_motor = apagado ;
 			apagar_leds();
+			_delay_ms(200);
+			//EIFR = 0x00 ; // Apaga los flags, por si acaso
 		}
 	}
 
@@ -262,23 +273,27 @@ main (void)
 	while(1)
 	{
 		// Hacer pooling del TIME_BUTTON
-		if ( is_low(BUTTON_PIN, TIME_BUTTON))
+		if ( is_low(BUTTON_PIN, TIME_BUTTON) && pul_time == alto )
 		{
-			_delay_ms(5); // Espera
-			if ( is_low(BUTTON_PIN, TIME_BUTTON)) // vuelve a medir
-			{
-				alterar_tiempo();
-			}
+			pul_time = bajo ;
+			_delay_ms(10); // Espera
+			alterar_tiempo();
+		}
+		if ( is_high(BUTTON_PIN, TIME_BUTTON)) // vuelve a medir
+		{
+			pul_time = alto ;
 		}
 
 		// Hacer pooling del STEP_BUTTON
-		if ( is_low(BUTTON_PIN, STEP_BUTTON))
+		if ( is_low(BUTTON_PIN, STEP_BUTTON) && pul_step == alto )
 		{
-			_delay_ms(5); // Espera
-			if ( is_low(BUTTON_PIN, STEP_BUTTON)) // vuelve a medir
-			{
-				arranque_escalon();
-			}
+			pul_step = bajo ;
+			_delay_ms(10); // Espera
+			arranque_escalon();
+		}
+		if ( is_high(BUTTON_PIN, STEP_BUTTON)) // vuelve a medir
+		{
+			pul_step = alto ;
 		}
 	}
 }
