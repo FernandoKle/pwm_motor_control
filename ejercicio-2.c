@@ -26,7 +26,7 @@ Escrito por: Fernando Kleinubing
 //#define __AVR_ATmega328P__ 
 
 // delay.h: Permite el uso de variables para los delays
-//#define __DELAY_BACKWARD_COMPATIBLE__ // los delays usan floats...
+#define __DELAY_BACKWARD_COMPATIBLE__ // los delays usan floats...
 
 #include <inttypes.h> // uint8_t int8_t entre otros tipos
 #include <avr/io.h>
@@ -85,6 +85,9 @@ Escrito por: Fernando Kleinubing
 #define STEP_BUTTON PINB2 // ISR (INT1_vect) (PIND3) (ya no)
 
 // @====== Variables y constantes globales =======@
+
+const int8_t led_array[] = {LED0, LED1, LED2, LED3};
+
 #define T1 5000 // ms - Default
 #define T2 8000 // ms
 #define T3 11000 // ms
@@ -95,8 +98,8 @@ volatile int8_t time_index = 0 ; // Debe estar entre 0 y 3
 volatile int16_t time_base = T1 ;
 
 // Cantidad de pasos por segundo
-#define PASOS 50
-#define PERIODO 20 // ms
+#define PASOS 100 // 50
+#define PERIODO 10 // 20 // ms
 
 // Cantidad de pasos de PWM totales
 // para cada segundo
@@ -136,10 +139,10 @@ volatile int16_t step_un_quinto = T1_PASOS_1_QUINTO ;
 
 //const float step_inc_array[] = {T1_STEP, T2_STEP, T3_STEP, T4_STEP};
 const float step_inc_array[] = {
-	0.08,  // T1_STEP 
-	0.05,  // T2_STEP 
-	0.036, // T3_STEP 
-	0.028  // T4_STEP
+	0.02,  //0.08,  // T1_STEP = PERIODO / T1_PASOS, //0.002,  //
+	0.0125,//0.05,  // T2_STEP = PERIODO / T2_PASOS, //0.00125,//
+	0.0090,//0.036, // T3_STEP = PERIODO / T3_PASOS, //0.0009, //
+	0.0071 //0.028  // T4_STEP = PERIODO / T4_PASOS  //0.0007  //
 };
 
 // Estado del motor
@@ -179,35 +182,14 @@ ISR (INT0_vect) // Boton de arranque por PWM
 	if (estado_motor == apagado)
 	{
 		estado_motor = en_pwm ;
-		arranque_pwm();
 	}
-	else 
+	if (estado_motor == encendido)
 	{
-		// si no se presiona rapido el boton 
-		// esto se ejecuta al final de la secuencia...
-		// las interrupciones tienden a ejecutarse 2 veces.
-		// esto no se ve en el simulador
-		// con este tercer estado intento evitar ese problema.
-		if (estado_motor == en_pwm)
-		{
-			estado_motor = encendido ;
-		}
-		else if ( estado_motor == encendido )
-		{
-			estado_motor = casi_apagado ;
-		}
-		else
-		{
-			MOTOR_OFF ;
-			estado_motor = apagado ;
-			apagar_leds();
-			_delay_ms(200);
-			//EIFR = 0x00 ; // Apaga los flags, por si acaso
-		}
+		_delay_ms(200);
+		estado_motor = apagado ;
+		MOTOR_OFF ;
+		apagar_leds();
 	}
-
-	//EIFR = 0x00 ; // Apaga los flags, por si acaso
-	// no parece tener efecto...
 
 	return;
 }
@@ -272,6 +254,12 @@ main (void)
 	// @====== Loop =====@
 	while(1)
 	{
+		// Hacer Encendido por PWM
+		if ( estado_motor == en_pwm )
+		{
+			arranque_pwm();
+			estado_motor = encendido ;
+		}
 		// Hacer pooling del TIME_BUTTON
 		if ( is_low(BUTTON_PIN, TIME_BUTTON) && pul_time == alto )
 		{
@@ -362,13 +350,16 @@ arranque_pwm ()
 
 		MOTOR_ON ;
 
-		uint16_t i_step = i * pendiente + 1 ;
+		//uint16_t i_step = i * pendiente + 1 ;
+		float i_step = i * pendiente + 1 ;
 
-		alt_delay_ms ( i_step ) ;
+		//alt_delay_ms ( i_step ) ;
+		_delay_ms ( i_step ) ;
 
 		MOTOR_OFF ;
 
-		alt_delay_ms ( PERIODO - i_step ) ;
+		//alt_delay_ms ( PERIODO - i_step ) ;
+		_delay_ms ( PERIODO - i_step ) ;
 	}
 	
 	// Dejar encendido al final de la secuencia
@@ -408,6 +399,12 @@ alterar_tiempo ()
 	time_base = time_base_array [time_index] ;
 	time_step = time_step_array [time_index] ;
 	step_un_quinto = un_quinto_step_array [time_index] ;
+
+	// Parpeadea un LED
+	tbi(LED_PORT, led_array[time_index]);
+	_delay_ms(100);
+	tbi(LED_PORT, led_array[time_index]);
+	_delay_ms(100);
 
 	return ;
 }
