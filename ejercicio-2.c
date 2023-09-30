@@ -80,6 +80,8 @@ Escrito por: Fernando Kleinubing
 #define BUTTON_PORT PINB // para evitar errores
 #define BUTTON_PIN 	PINB // deben ser iguales
 
+#define PWM_PIN  PIND // ISR (INT0_vect)
+
 #define TIME_BUTTON PINB3 // Pooling
 #define PWM_BUTTON  PIND2 // ISR (INT0_vect)
 #define STEP_BUTTON PINB2 // ISR (INT1_vect) (PIND3) (ya no)
@@ -183,12 +185,10 @@ ISR (INT0_vect) // Boton de arranque por PWM
 	{
 		estado_motor = en_pwm ;
 	}
+
 	if (estado_motor == encendido)
 	{
-		_delay_ms(200);
-		estado_motor = apagado ;
-		MOTOR_OFF ;
-		apagar_leds();
+		estado_motor = casi_apagado ;
 	}
 
 	return;
@@ -259,6 +259,13 @@ main (void)
 		{
 			arranque_pwm();
 			estado_motor = encendido ;
+		}
+		if ( (estado_motor == casi_apagado) && is_high(PWM_PIN, PWM_BUTTON) )
+		{
+			_delay_ms(10);
+			MOTOR_OFF ;
+			apagar_leds();
+			estado_motor = apagado ;
 		}
 		// Hacer pooling del TIME_BUTTON
 		if ( is_low(BUTTON_PIN, TIME_BUTTON) && pul_time == alto )
